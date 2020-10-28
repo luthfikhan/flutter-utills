@@ -5,6 +5,9 @@ import 'dart:convert';
 // https://pub.dev/packages/http
 import 'package:http/http.dart' as http;
 
+// https://pub.dev/packages/connectivity
+import 'package:connectivity/connectivity.dart';
+
 WebResponseModel responseStatusModelFromJson(String str) =>
     WebResponseModel.fromJson(json.decode(str));
 
@@ -80,13 +83,17 @@ class RequestHelper {
 
       responseJson = _returnResponse(response);
     } on SocketException {
-      throw NetworkException('Tidak ada koneksi');
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        throw NetworkException('Tidak ada koneksi');
+      }
+      throw NetworkException('Bad Host');
     } on TimeoutException {
       throw NetworkException('Time out');
     } on FormatException {
       throw NetworkException('error');
-    } on HandshakeException {
-      throw NetworkException('Network tidak stabil');
+    } on HandshakeException catch (e) {
+      throw NetworkException(e.message);
     }
     return responseJson;
   }
